@@ -13,44 +13,31 @@
 <body>
     <div id="map"></div>
     <script>
-        // Итоговые общие размеры всей карты (3500 + 3501)
-        var w = 7001; 
-        var h = 7001; 
-
+        // Создаем карту с простой системой координат (0,0 в левом нижнем углу)
         var map = L.map('map', {
-            minZoom: -4,
-            maxZoom: 3,
-            zoom: -2,
-            crs: L.CRS.Simple
+            crs: L.CRS.Simple,
+            minZoom: -3,
+            maxZoom: 2
         });
 
-        // Полные границы карты
-        var southWest = map.unproject([0, h], map.getMaxZoom()-1);
-        var northEast = map.unproject([w, 0], map.getMaxZoom()-1);
-        var bounds = new L.LatLngBounds(southWest, northEast);
-        
-        // ТОЧНАЯ СТЫКОВКА КУСКОВ ПИКСЕЛЬ-В-ПИКСЕЛЬ:
-        
-        // 1. Верхний левый кусок (TL: 3500 x 3500)
-        var boundsTL = new L.LatLngBounds(map.unproject([0, 3500], map.getMaxZoom()-1), map.unproject([3500, 0], map.getMaxZoom()-1));
-        
-        // 2. Верхний правый кусок (TR: 3501 x 3500)
-        var boundsTR = new L.LatLngBounds(map.unproject([3500, 3500], map.getMaxZoom()-1), map.unproject([7001, 0], map.getMaxZoom()-1));
-        
-        // 3. Нижний левый кусок (BL: 3500 x 3501)
-        var boundsBL = new L.LatLngBounds(map.unproject([0, 7001], map.getMaxZoom()-1), map.unproject([3500, 3500], map.getMaxZoom()-1));
-        
-        // 4. Нижний правый кусок (BR: 3501 x 3501)
-        var boundsBR = new L.LatLngBounds(map.unproject([3500, 7001], map.getMaxZoom()-1), map.unproject([7001, 3500], map.getMaxZoom()-1));
+        // Задаем координаты углов для сетки 2х2 (каждый кусок условно 1000х1000 единиц)
+        var boundsTL = [[1000, 0], [2000, 1000]];     // Верхний левый
+        var boundsTR = [[1000, 1000], [2000, 2000]];  // Верхний правый
+        var boundsBL = [[0, 0], [1000, 1000]];         // Нижний левый
+        var boundsBR = [[0, 1000], [1000, 2000]];      // Нижний правый
 
-        // Выводим все 4 куска на их законные места
+        // Объединяем все в общие границы карты
+        var totalBounds = [[0, 0], [2000, 2000]];
+
+        // Накладываем картинки
         L.imageOverlay('map_top_left.png', boundsTL).addTo(map);
         L.imageOverlay('map_top_right.png', boundsTR).addTo(map);
         L.imageOverlay('map_bottom_left.png', boundsBL).addTo(map);
         L.imageOverlay('map_bottom_right.png', boundsBR).addTo(map);
 
-        map.setMaxBounds(bounds);
-        map.setView(bounds.getCenter(), -2);
+        // Ограничиваем камеру и центрируем её
+        map.setMaxBounds(totalBounds);
+        map.fitBounds(totalBounds);
     </script>
 </body>
 </html>
