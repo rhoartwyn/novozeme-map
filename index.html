@@ -13,31 +13,38 @@
 <body>
     <div id="map"></div>
     <script>
-        // Создаем карту с простой системой координат (0,0 в левом нижнем углу)
+        // Инициализируем карту в режиме простых пикселей
         var map = L.map('map', {
             crs: L.CRS.Simple,
             minZoom: -3,
-            maxZoom: 2
+            maxZoom: 2,
+            zoom: -1
         });
 
-        // Задаем координаты углов для сетки 2х2 (каждый кусок условно 1000х1000 единиц)
-        var boundsTL = [[1000, 0], [2000, 1000]];     // Верхний левый
-        var boundsTR = [[1000, 1000], [2000, 2000]];  // Верхний правый
-        var boundsBL = [[0, 0], [1000, 1000]];         // Нижний левый
-        var boundsBR = [[0, 1000], [1000, 2000]];      // Нижний правый
+        // Задаем сетку для четырех кусков. Координаты в Leaflet: [[Юг, Запад], [Север, Восток]]
+        // Это аналог обычных пикселей [[Y_нижний, X_левый], [Y_верхний, X_правый]]
+        
+        var boundsTL = [[3500, 0], [7001, 3500]];     // Верхний левый
+        var boundsTR = [[3500, 3500], [7001, 7001]];  // ... правый
+        var boundsBL = [[0, 0], [3500, 3500]];        // Нижний левый
+        var boundsBR = [[0, 3500], [3500, 7001]];     // ... правый
 
-        // Объединяем все в общие границы карты
-        var totalBounds = [[0, 0], [2000, 2000]];
+        var totalBounds = [[0, 0], [7001, 7001]];
 
-        // Накладываем картинки
+        // Накладываем файлы
         L.imageOverlay('map_top_left.png', boundsTL).addTo(map);
         L.imageOverlay('map_top_right.png', boundsTR).addTo(map);
         L.imageOverlay('map_bottom_left.png', boundsBL).addTo(map);
         L.imageOverlay('map_bottom_right.png', boundsBR).addTo(map);
 
-        // Ограничиваем камеру и центрируем её
-        map.setMaxBounds(totalBounds);
+        // Центрируем камеру строго на середину всей карты
         map.fitBounds(totalBounds);
+        map.setMaxBounds(totalBounds);
+
+        // Костыль для мобильных браузеров, чтобы карта обновила размеры, если не прогрузилась сразу
+        setTimeout(function () {
+            map.invalidateSize();
+        }, 500);
     </script>
 </body>
 </html>
