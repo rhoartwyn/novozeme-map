@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Карта нашего сервера Minecraft</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://unpkg.com" />
+    <script src="https://unpkg.com"></script>
+    <style>
+        html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; background: #141414; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // ВПИШИТЕ СЮДА РАЗМЕРЫ ВАШЕЙ ПОЛНОЙ КАРТЫ В ПИКСЕЛЯХ:
+        var w = 4000; // Ширина
+        var h = 4000; // Высота
+
+        var map = L.map('map', {
+            minZoom: -3,
+            maxZoom: 3,
+            zoom: -1,
+            crs: L.CRS.Simple
+        });
+
+        // Считаем координаты углов и центра
+        var southWest = map.unproject([0, h], map.getMaxZoom()-1);
+        var northEast = map.unproject([w, 0], map.getMaxZoom()-1);
+        var bounds = new L.LatLngBounds(southWest, northEast);
+        
+        var midX = w / 2;
+        var midY = h / 2;
+        
+        // Координатные границы для каждого из 4-х кусков
+        var boundsTL = new L.LatLngBounds(map.unproject([0, midY], map.getMaxZoom()-1), map.unproject([midX, 0], map.getMaxZoom()-1));
+        var boundsTR = new L.LatLngBounds(map.unproject([midX, midY], map.getMaxZoom()-1), map.unproject([w, 0], map.getMaxZoom()-1));
+        var boundsBL = new L.LatLngBounds(map.unproject([0, h], map.getMaxZoom()-1), map.unproject([midX, midY], map.getMaxZoom()-1));
+        var boundsBR = new L.LatLngBounds(map.unproject([midX, h], map.getMaxZoom()-1), map.unproject([w, midY], map.getMaxZoom()-1));
+
+        // Склеиваем и выводим куски на экран
+        L.imageOverlay('map_top_left.png', boundsTL).addTo(map);
+        L.imageOverlay('map_top_right.png', boundsTR).addTo(map);
+        L.imageOverlay('map_bottom_left.png', boundsBL).addTo(map);
+        L.imageOverlay('map_bottom_right.png', boundsBR).addTo(map);
+
+        map.setMaxBounds(bounds);
+        map.setView(bounds.getCenter(), -1);
+    </script>
+</body>
+</html>
