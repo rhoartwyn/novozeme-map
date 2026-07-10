@@ -1,50 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Карта нашего сервера Minecraft</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="https://unpkg.com" />
-    <script src="https://unpkg.com"></script>
     <style>
-        html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; background: #141414; }
+        /* Сбрасываем лишние отступы и делаем черный фон */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #141414;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto; /* Позволяет скроллить карту в любую сторону */
+        }
+
+        /* Контейнер для склейки 4-х карт */
+        .map-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Ровно 2 колонки */
+            line-height: 0; /* Убирает микро-щели между картинками по вертикали */
+            font-size: 0;
+            max-width: 95vw; /* Ограничиваем начальный размер под экран телефона */
+            max-height: 95vh;
+        }
+
+        /* Настройки для самих картинок */
+        .map-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0;
+            padding: 0;
+            image-rendering: pixelated; /* Делает пиксели Minecraft четкими при приближении */
+        }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    <script>
-        // Инициализируем карту в режиме простых пикселей
-        var map = L.map('map', {
-            crs: L.CRS.Simple,
-            minZoom: -3,
-            maxZoom: 2,
-            zoom: -1
-        });
 
-        // Задаем сетку для четырех кусков. Координаты в Leaflet: [[Юг, Запад], [Север, Восток]]
-        // Это аналог обычных пикселей [[Y_нижний, X_левый], [Y_верхний, X_правый]]
-        
-        var boundsTL = [[3500, 0], [7001, 3500]];     // Верхний левый
-        var boundsTR = [[3500, 3500], [7001, 7001]];  // ... правый
-        var boundsBL = [[0, 0], [3500, 3500]];        // Нижний левый
-        var boundsBR = [[0, 3500], [3500, 7001]];     // ... правый
+    <!-- Сетка 2х2, которая склеит картинки пиксель-в-пиксель -->
+    <div class="map-container">
+        <img src="map_top_left.png" alt="TL">
+        <img src="map_top_right.png" alt="TR">
+        <img src="map_bottom_left.png" alt="BL">
+        <img src="map_bottom_right.png" alt="BR">
+    </div>
 
-        var totalBounds = [[0, 0], [7001, 7001]];
-
-        // Накладываем файлы
-        L.imageOverlay('map_top_left.png', boundsTL).addTo(map);
-        L.imageOverlay('map_top_right.png', boundsTR).addTo(map);
-        L.imageOverlay('map_bottom_left.png', boundsBL).addTo(map);
-        L.imageOverlay('map_bottom_right.png', boundsBR).addTo(map);
-
-        // Центрируем камеру строго на середину всей карты
-        map.fitBounds(totalBounds);
-        map.setMaxBounds(totalBounds);
-
-        // Костыль для мобильных браузеров, чтобы карта обновила размеры, если не прогрузилась сразу
-        setTimeout(function () {
-            map.invalidateSize();
-        }, 500);
-    </script>
 </body>
 </html>
