@@ -2,52 +2,69 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>Карта нашего сервера Minecraft</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes">
+    <title>НОВОЗЕМЬЕ 09.07.2026</title>
+    <!-- Подключаем ультра-легкий скрипт для бесконечного зума картинок -->
+    <script src="https://jsdelivr.net"></script>
     <style>
-        /* Сбрасываем лишние отступы и делаем черный фон */
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             background-color: #141414;
+            overflow: hidden; /* Убираем стандартный скролл, теперь за него отвечает скрипт */
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: auto; /* Позволяет скроллить карту в любую сторону */
+            user-select: none;
+            touch-action: none; /* Отключаем стандартные жесты браузера */
         }
 
-        /* Контейнер для склейки 4-х карт */
-        .map-container {
+        /* Контейнер для всей карты */
+        #map-wrapper {
+            width: 7001px;   /* Полная ширина вашей карты */
+            height: 7001px;  /* Полная высота вашей карты */
             display: grid;
-            grid-template-columns: 1fr 1fr; /* Ровно 2 колонки */
-            line-height: 0; /* Убирает микро-щели между картинками по вертикали */
+            grid-template-columns: 3500px 3501px; /* Точные размеры левых и правых кусков */
+            grid-template-rows: 3500px 3501px;    /* Точные размеры верхних и нижних кусков */
+            line-height: 0;
             font-size: 0;
-            max-width: 95vw; /* Ограничиваем начальный размер под экран телефона */
-            max-height: 95vh;
         }
 
-        /* Настройки для самих картинок */
-        .map-container img {
+        #map-wrapper img {
             width: 100%;
-            height: auto;
+            height: 100%;
             display: block;
             margin: 0;
             padding: 0;
-            image-rendering: pixelated; /* Делает пиксели Minecraft четкими при приближении */
+            image-rendering: pixelated; /* Делает пиксели майна четкими даже при огромном зуме */
         }
     </style>
 </head>
 <body>
 
-    <!-- Сетка 2х2, которая склеит картинки пиксель-в-пиксель -->
-    <div class="map-container">
+    <!-- Сетка 2х2 с точными пиксельными размерами -->
+    <div id="map-wrapper">
         <img src="map_top_left.png" alt="TL">
         <img src="map_top_right.png" alt="TR">
         <img src="map_bottom_left.png" alt="BL">
         <img src="map_bottom_right.png" alt="BR">
     </div>
+
+    <script>
+        // Активируем бесконечный зум и перетаскивание
+        const element = document.getElementById('map-wrapper');
+        const panzoom = Panzoom(element, {
+            maxScale: 8,       // Максимальное увеличение (поставьте 10 или 15, если нужно еще сильнее!)
+            minScale: 0.05,     // Минимальное отдаление, чтобы увидеть всю карту сразу
+            contain: 'outside', // Не дает карте улететь за пределы экрана при отдалении
+            startScale: 0.1     // Начальный масштаб при открытии сайта
+        });
+
+        // Включаем зум колесиком мышки (для ПК)
+        element.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
+    </script>
 
 </body>
 </html>
