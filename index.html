@@ -2,8 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes">
     <title>Карта нашего сервера Minecraft</title>
+    <!-- Подключаем ультра-легкий скрипт для бесконечного зума картинок -->
+    <script src="https://jsdelivr.net"></script>
     <style>
         html, body {
             margin: 0;
@@ -11,100 +13,57 @@
             width: 100%;
             height: 100%;
             background-color: #141414;
-            color: white;
-            font-family: sans-serif;
-        }
-
-        /* Контейнер для прокрутки */
-        .map-scroll-box {
-            width: 100%;
-            height: 100%;
-            overflow: auto; /* Включает прокрутку во все стороны */
+            overflow: hidden; /* Убираем стандартный скролл, теперь за него отвечает скрипт */
             display: flex;
-            justify-content: flex-start;
-            align-items: flex-start;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            touch-action: none; /* Отключаем стандартные жесты браузера */
         }
 
-        /* Сетка для склейки карт */
-        .map-grid {
+        /* Контейнер для всей карты */
+        #map-wrapper {
+            width: 7001px;   /* Полная ширина вашей карты */
+            height: 7001px;  /* Полная высота вашей карты */
             display: grid;
-            grid-template-columns: 3500fr 3501fr; /* Пропорции ваших кусков */
+            grid-template-columns: 3500px 3501px; /* Точные размеры левых и правых кусков */
+            grid-template-rows: 3500px 3501px;    /* Точные размеры верхних и нижних кусков */
             line-height: 0;
             font-size: 0;
-            margin: auto; /* Центрирует карту, если она меньше экрана */
-            
-            /* НАЧАЛЬНЫЙ РЕЖИМ: Карта вписана в экран телефона */
-            width: 95vw;
-            height: auto;
-            max-height: 95vh;
-            object-fit: contain;
         }
 
-        /* Когда включен режим "Оригинальный размер" */
-        .map-grid.full-size {
-            width: 7001px;  /* Разворачиваем в реальные 7 тысяч пикселей! */
-            max-height: none;
-        }
-
-        .map-grid img {
+        #map-wrapper img {
             width: 100%;
-            height: auto;
+            height: 100%;
             display: block;
-            image-rendering: pixelated; /* Четкие пиксели майна */
-        }
-
-        /* Стильная кнопка переключения зума */
-        .zoom-btn {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #4e505a;
-            color: white;
-            border: 2px solid #fff;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            z-index: 9999;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        .zoom-btn:active {
-            background: #3c3f41;
+            margin: 0;
+            padding: 0;
+            image-rendering: pixelated; /* Делает пиксели майна четкими даже при огромном зуме */
         }
     </style>
 </head>
 <body>
 
-    <!-- Кнопка управления масштабом -->
-    <button class="zoom-btn" id="zoomToggle" onclick="toggleZoom()">🔎 Приблизить на максимум</button>
-
-    <!-- Область прокрутки -->
-    <div class="map-scroll-box">
-        <!-- Сама карта -->
-        <div class="map-grid" id="minecraftMap">
-            <img src="map_top_left.png" alt="TL">
-            <img src="map_top_right.png" alt="TR">
-            <img src="map_bottom_left.png" alt="BL">
-            <img src="map_bottom_right.png" alt="BR">
-        </div>
+    <!-- Сетка 2х2 с точными пиксельными размерами -->
+    <div id="map-wrapper">
+        <img src="map_top_left.png" alt="TL">
+        <img src="map_top_right.png" alt="TR">
+        <img src="map_bottom_left.png" alt="BL">
+        <img src="map_bottom_right.png" alt="BR">
     </div>
 
     <script>
-        function toggleZoom() {
-            var map = document.getElementById('minecraftMap');
-            var btn = document.getElementById('zoomToggle');
-            
-            // Переключаем класс полноразмерного режима
-            if (map.classList.contains('full-size')) {
-                map.classList.remove('full-size');
-                btn.innerText = "🔎 Приблизить на максимум";
-            } else {
-                map.classList.add('full-size');
-                btn.innerText = "🔍 Отдалить всю карту";
-            }
-        }
+        // Активируем бесконечный зум и перетаскивание
+        const element = document.getElementById('map-wrapper');
+        const panzoom = Panzoom(element, {
+            maxScale: 20,       // Максимальное увеличение (поставьте 10 или 15, если нужно еще сильнее!)
+            minScale: 0.05,     // Минимальное отдаление, чтобы увидеть всю карту сразу
+            contain: 'outside', // Не дает карте улететь за пределы экрана при отдалении
+            startScale: 0.1     // Начальный масштаб при открытии сайта
+        });
+
+        // Включаем зум колесиком мышки (для ПК)
+        element.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
     </script>
 
 </body>
