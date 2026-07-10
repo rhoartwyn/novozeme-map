@@ -2,10 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Карта нашего сервера Minecraft</title>
-    <!-- Подключаем ультра-легкий скрипт для бесконечного зума картинок -->
-    <script src="https://jsdelivr.net"></script>
+    <!-- Подключаем библиотеку OpenSeadragon для бесконечного супер-зума -->
+    <script src="https://cloudflare.com"></script>
     <style>
         html, body {
             margin: 0;
@@ -13,58 +13,64 @@
             width: 100%;
             height: 100%;
             background-color: #141414;
-            overflow: hidden; /* Убираем стандартный скролл, теперь за него отвечает скрипт */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            user-select: none;
-            touch-action: none; /* Отключаем стандартные жесты браузера */
+            overflow: hidden;
         }
-
-        /* Контейнер для всей карты */
-        #map-wrapper {
-            width: 7001px;   /* Полная ширина вашей карты */
-            height: 7001px;  /* Полная высота вашей карты */
-            display: grid;
-            grid-template-columns: 3500px 3501px; /* Точные размеры левых и правых кусков */
-            grid-template-rows: 3500px 3501px;    /* Точные размеры верхних и нижних кусков */
-            line-height: 0;
-            font-size: 0;
-        }
-
-        #map-wrapper img {
+        /* Область, где будет отображаться карта */
+        #container {
             width: 100%;
             height: 100%;
-            display: block;
-            margin: 0;
-            padding: 0;
-            image-rendering: pixelated; /* Делает пиксели майна четкими даже при огромном зуме */
         }
     </style>
 </head>
 <body>
 
-    <!-- Сетка 2х2 с точными пиксельными размерами -->
-    <div id="map-wrapper">
-        <img src="map_top_left.png" alt="TL">
-        <img src="map_top_right.png" alt="TR">
-        <img src="map_bottom_left.png" alt="BL">
-        <img src="map_bottom_right.png" alt="BR">
-    </div>
+    <div id="container"></div>
 
     <script>
-        // Активируем бесконечный зум и перетаскивание
-        const element = document.getElementById('map-wrapper');
-        const panzoom = Panzoom(element, {
-            maxScale: 20,       // Максимальное увеличение (поставьте 10 или 15, если нужно еще сильнее!)
-            minScale: 0.05,     // Минимальное отдаление, чтобы увидеть всю карту сразу
-            contain: 'outside', // Не дает карте улететь за пределы экрана при отдалении
-            startScale: 0.1     // Начальный масштаб при открытии сайта
+        // Запускаем просмотрщик
+        var viewer = OpenSeadragon({
+            id: "container",
+            prefixUrl: "https://cloudflare.com", // Иконки управления
+            showNavigationControl: false, // Прячем лишние кнопки, управляем только пальцами
+            maxZoomLevel: 30,             // ВОТ ОНО! Разрешаем увеличивать хоть в 30 раз!
+            minZoomLevel: 0.5,
+            defaultZoomLevel: 1,
+            gestureSettingsTouch: {
+                pinchRotate: false       // Отключаем случайный поворот карты пальцами
+            },
+            
+            // Склеиваем наши 4 куска в единое целое по точным координатам
+            tileSources: [
+                {
+                    type: 'image',
+                    url: 'map_top_left.png',
+                    x: 0, y: 0, w: 3500 // Ширина 3500
+                },
+                {
+                    type: 'image',
+                    url: 'map_top_right.png',
+                    x: 3500, y: 0, w: 3501 // Начинается там, где кончился первый
+                },
+                {
+                    type: 'image',
+                    url: 'map_bottom_left.png',
+                    x: 0, y: 3500, w: 3500 // Начинается снизу (высота 3500)
+                },
+                {
+                    type: 'image',
+                    url: 'map_bottom_right.png',
+                    x: 3500, y: 3500, w: 3501 // Нижний правый угол
+                }
+            ]
         });
 
-        // Включаем зум колесиком мышки (для ПК)
-        element.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
+        // Включаем четкие пиксели майнкрафта при сильном приближении
+        viewer.addHandler('open', function() {
+            var canvas = viewer.canvas.querySelector('canvas');
+            if (canvas) {
+                canvas.style.imageRendering = 'pixelated';
+            }
+        });
     </script>
-
 </body>
 </html>
