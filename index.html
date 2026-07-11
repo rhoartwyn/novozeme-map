@@ -2,10 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=10.0, user-scalable=yes">
     <title>Карта нашего сервера Minecraft</title>
-    <!-- Подключаем библиотеку OpenSeadragon для бесконечного супер-зума -->
-    <script src="https://cloudflare.com"></script>
     <style>
         html, body {
             margin: 0;
@@ -13,64 +11,158 @@
             width: 100%;
             height: 100%;
             background-color: #141414;
-            overflow: hidden;
+            overflow: hidden; /* Отключаем стандартный скролл браузера */
+            position: relative;
+            touch-action: none; /* Запрещаем браузеру перехватывать жесты пальцев */
+            user-select: none;
         }
-        /* Область, где будет отображаться карта */
-        #container {
+
+        /* Контейнер, который мы будем двигать и увеличивать */
+        #map-container {
+            position: absolute;
+            display: grid;
+            grid-template-columns: 3500fr 3501fr; /* Пропорции ваших кусков */
+            line-height: 0;
+            font-size: 0;
+            transform-origin: 0 0; /* Точка масштабирования — левый верхний угол */
+            width: 7001px; /* Реальный размер карты */
+            height: 7001px;
+            cursor: grab;
+        }
+
+        #map-container:active {
+            cursor: grabbing;
+        }
+
+        #map-container img {
             width: 100%;
-            height: 100%;
+            height: auto;
+            display: block;
+            image-rendering: pixelated; /* Сохраняем четкие кубические пиксели */
         }
     </style>
 </head>
 <body>
 
-    <div id="container"></div>
+    <div id="map-container">
+        <img src="map_top_left.png" alt="TL">
+        <img src="map_top_right.png" alt="TR">
+        <img src="map_bottom_left.png" alt="BL">
+        <img src="map_bottom_right.png" alt="BR">
+    </div>
 
     <script>
-        // Запускаем просмотрщик
-        var viewer = OpenSeadragon({
-            id: "container",
-            prefixUrl: "https://cloudflare.com", // Иконки управления
-            showNavigationControl: false, // Прячем лишние кнопки, управляем только пальцами
-            maxZoomLevel: 30,             // ВОТ ОНО! Разрешаем увеличивать хоть в 30 раз!
-            minZoomLevel: 0.5,
-            defaultZoomLevel: 1,
-            gestureSettingsTouch: {
-                pinchRotate: false       // Отключаем случайный поворот карты пальцами
-            },
-            
-            // Склеиваем наши 4 куска в единое целое по точным координатам
-            tileSources: [
-                {
-                    type: 'image',
-                    url: 'map_top_left.png',
-                    x: 0, y: 0, w: 3500 // Ширина 3500
-                },
-                {
-                    type: 'image',
-                    url: 'map_top_right.png',
-                    x: 3500, y: 0, w: 3501 // Начинается там, где кончился первый
-                },
-                {
-                    type: 'image',
-                    url: 'map_bottom_left.png',
-                    x: 0, y: 3500, w: 3500 // Начинается снизу (высота 3500)
-                },
-                {
-                    type: 'image',
-                    url: 'map_bottom_right.png',
-                    x: 3500, y: 3500, w: 3501 // Нижний правый угол
-                }
-            ]
+        const el = document.getElementById('map-container');
+        
+        // Переменные состояния карты
+        let scale = 0.1; // Начальный масштаб (карта уменьшена, чтобы влезть в экран)
+        let pointX = 0;
+        let pointY = 0;
+        let startX = 0;
+        let startY = 0;
+        let isPanning = false;
+        
+        // Переменные для зума двумя пальцами (тачскрин)
+        let evHistory = [];
+        let prevDiff = -1;
+
+        // Центрируем карту при первой загрузке под размер экрана
+        scale = Math.min(window.innerWidth / 7001, window.innerHeight / 7001) * 0.9;
+        pointX = (window.innerWidth - 7001 * scale) / 2;
+        pointY = (window.innerHeight - 7001 * scale) / 2;
+        updateTransform();
+
+        function updateTransform() {
+            // Ограничения зума: от 0.02 (очень далеко) до 20.0 (приближение в 20 раз!)
+            if (scale < 0.02) scale = 0.02;
+            if (scale > 20) scale = 20; 
+            el.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+        }
+
+        // --- УПРАВЛЕНИЕ МЫШЬЮ И ОДИНОЧНЫМ СЕНСОРОМ (ПЕРЕТАСКИВАНИЕ) ---
+        window.addEventListener('pointerdown', (e) => {
+            isPanning = true;
+            startX = e.clientX - pointX;
+            startY = e.clientY - pointY;
+            evHistory.push(e);
         });
 
-        // Включаем четкие пиксели майнкрафта при сильном приближении
-        viewer.addHandler('open', function() {
-            var canvas = viewer.canvas.querySelector('canvas');
-            if (canvas) {
-                canvas.style.imageRendering = 'pixelated';
+        window.addEventListener('pointermove', (e) => {
+            // Обновляем координаты для тача двумя пальцами
+            for (let i = 0; i < evHistory.length; i++) {
+                if (e.pointerId === evHistory[i].pointerId) {
+                    evHistory[i] = e;
+                    break;
+                }
             }
+
+            // Если держим двумя пальцами — это зум, а не перетаскивание
+            if (evHistory.length === 2) {
+                isPanning = false;
+                let curDiff = Math.hypot(evHistory[0].clientX - evHistory[1].clientX, evHistory[0].clientY - evHistory[1].clientY);
+                if (prevDiff > 0) {
+                    let zoomFactor = curDiff / prevDiff;
+                    // Центр между двумя пальцами для плавного зума
+                    let midX = (evHistory[0].clientX + evHistory[1].clientX) / 2;
+                    let midY = (evHistory[0].clientY + evHistory[1].clientY) / 2;
+                    
+                    let xs = (midX - pointX) / scale;
+                    let ys = (midY - pointY) / scale;
+                    
+                    scale *= zoomFactor;
+                    pointX = midX - xs * scale;
+                    pointY = midY - ys * scale;
+                    updateTransform();
+                }
+                prevDiff = curDiff;
+                return;
+            }
+
+            if (!isPanning) return;
+            pointX = e.clientX - startX;
+            pointY = e.clientY - startY;
+            updateTransform();
         });
+
+        window.addEventListener('pointerup', (e) => {
+            isPanning = false;
+            removeTargetEvent(e);
+            if (evHistory.length < 2) prevDiff = -1;
+        });
+        
+        window.addEventListener('pointercancel', (e) => {
+            isPanning = false;
+            evHistory = [];
+            prevDiff = -1;
+        });
+
+        function removeTargetEvent(e) {
+            for (let i = 0; i < evHistory.length; i++) {
+                if (evHistory[i].pointerId === e.pointerId) {
+                    evHistory.splice(i, 1);
+                    break;
+                }
+            }
+        }
+
+        // --- УПРАВЛЕНИЕ КОЛЕСИКОМ МЫШКИ (ДЛЯ ПК) ---
+        window.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            let xs = (e.clientX - pointX) / scale;
+            let ys = (e.clientY - pointY) / scale;
+            
+            // Шаг зума
+            if (e.deltaY < 0) {
+                scale *= 1.15; // Приближение
+            } else {
+                scale /= 1.15; // Отдаление
+            }
+            
+            pointX = e.clientX - xs * scale;
+            pointY = e.clientY - ys * scale;
+            updateTransform();
+        }, { passive: false });
     </script>
+
 </body>
 </html>
